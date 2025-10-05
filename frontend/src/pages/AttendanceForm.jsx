@@ -48,7 +48,7 @@ function AttendanceForm() {
     { name: "Support Center", lat: 37.78, lng: -122.41 },
   ];
 
-  const isSpecificRCC = formData.site.toLowerCase() === "rcc office/आरसीसी कार्यालय".toLowerCase();
+  const isSpecificRCC = formData.site.toLowerCase() === "Dimensions Office".toLowerCase();
 
   // Fetch attendance status
 const fetchAttendanceStatus = async (email) => {
@@ -75,7 +75,7 @@ const fetchAttendanceStatus = async (email) => {
     console.log("Generated date (YYYY-MM-DD):", yyyyMMddDate);
 
     // Try YYYY-MM-DD first
-    let url = `https://attendance-leave-project.onrender.com/api/attendance?email=${encodeURIComponent(email)}&date=${yyyyMMddDate}`;
+    let url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(email)}&date=${yyyyMMddDate}`;
     console.log("Trying API URL (YYYY-MM-DD):", url);
     let response = await fetch(url, { cache: 'no-store' });
 
@@ -88,7 +88,7 @@ const fetchAttendanceStatus = async (email) => {
       const ddMMyyyyFormatter = new Intl.DateTimeFormat("en-IN", istOptions); // DD/MM/YYYY
       const ddMMyyyyDate = ddMMyyyyFormatter.format(now); // e.g., "03/10/2025"
       console.log("Falling back to DD/MM/YYYY:", ddMMyyyyDate);
-      url = `https://attendance-leave-project.onrender.com/api/attendance?email=${encodeURIComponent(email)}&date=${ddMMyyyyDate}`;
+      url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(email)}&date=${ddMMyyyyDate}`;
       response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) {
         const errorText2 = await response.text();
@@ -102,13 +102,13 @@ const fetchAttendanceStatus = async (email) => {
     const hasCheckedIn = records.some((record) => {
       const entryType = record.EntryType?.trim().toLowerCase();
       const site = record.site?.trim().toLowerCase();
-      return entryType === "in" && site === "rcc office/आरसीसी कार्यालय".toLowerCase();
+      return entryType === "in" && site === "Dimensions Office".toLowerCase();
     });
 
     const hasCheckedOut = records.some((record) => {
       const entryType = record.EntryType?.trim().toLowerCase();
       const site = record.site?.trim().toLowerCase();
-      return entryType === "out" && site === "rcc office/आरसीसी कार्यालय".toLowerCase();
+      return entryType === "out" && site === "Dimensions Office".toLowerCase();
     });
 
     console.log("Attendance Status:", { hasCheckedIn, hasCheckedOut });
@@ -125,7 +125,7 @@ const fetchAttendanceStatus = async (email) => {
     const init = async () => {
       try {
         setIsDataLoading(true);
-        const res = await fetch("https://attendance-leave-project.onrender.com/api/DropdownUserData", {
+        const res = await fetch("https://dimension-attendance-leave-system.vercel.app/api/DropdownUserData", {
           cache: 'no-store',
           priority: 'high'
         });
@@ -477,7 +477,7 @@ const fetchAttendanceStatus = async (email) => {
         image: imageBase64,
       };
 
-      const response = await fetch("https://attendance-leave-project.onrender.com/api/attendance-Form", {
+      const response = await fetch("https://dimension-attendance-leave-system.vercel.app/api/attendance-Form", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
