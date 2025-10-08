@@ -776,11 +776,13 @@ const fetchAttendanceStatus = async (email) => {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white"
                   >
                     <option value="">-- Select Work Shift --</option>
-                    <option value="09:00 AM - 06:00 PM">09:00 AM - 06:00 PM</option>
+                    <option value="09:00 AM - 06:00 PM">09:00 AM - 07:00 PM</option>
                     <option value="09:30 AM - 06:00 PM">09:30 AM - 06:00 PM</option>
-                    <option value="02:00 PM - 06:00 PM">02:00 PM - 06:00 PM</option>
-                    <option value="09:00 PM - 01:00 PM">09:00 PM - 01:00 PM</option>
-                    <option value="08:00 AM - 04:00 PM">08:00 AM - 04:00 PM</option>
+                    <option value="02:00 PM - 06:00 PM">10:00 PM - 05:00 PM</option>
+                    <option value="09:00 PM - 01:00 PM">10:00 PM - 06:00 PM</option>
+                    <option value="08:00 AM - 04:00 PM">10:00 AM - 02:00 PM</option>
+                    <option value="08:00 AM - 04:00 PM">02:00 AM - 06:00 PM</option>
+                    <option value="Sunday">Sunday</option>
                   </select>
                 </div>
               </div>
