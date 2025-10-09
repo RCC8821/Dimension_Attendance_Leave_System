@@ -27,7 +27,7 @@ const LeaveData = () => {
           // Normalize API data to match table field names
           const normalizedData = result.data.map((entry) => ({
             UID: entry.UID || "N/A",
-            SubmissionDate: entry.Timestamp || "N/A",
+            TIMESTAMP: entry.Timestamp || "N/A",
             name: entry.NAME || "N/A",
             empcode: entry.EMPCODE || "N/A",
             department: entry.DEPARTMENT || "N/A",

@@ -778,8 +778,8 @@ const fetchAttendanceStatus = async (email) => {
                     <option value="">-- Select Work Shift --</option>
                     <option value="09:00 AM - 06:00 PM">09:00 AM - 07:00 PM</option>
                     <option value="09:30 AM - 06:00 PM">09:30 AM - 06:00 PM</option>
-                    <option value="02:00 PM - 06:00 PM">10:00 PM - 05:00 PM</option>
-                    <option value="09:00 PM - 01:00 PM">10:00 PM - 06:00 PM</option>
+                    <option value="02:00 PM - 06:00 PM">10:00 AM - 05:00 PM</option>
+                    <option value="09:00 PM - 01:00 PM">10:00 AM - 06:00 PM</option>
                     <option value="08:00 AM - 04:00 PM">10:00 AM - 02:00 PM</option>
                     <option value="08:00 AM - 04:00 PM">02:00 AM - 06:00 PM</option>
                     <option value="Sunday">Sunday</option>
@@ -825,69 +825,69 @@ const fetchAttendanceStatus = async (email) => {
 
               {/* Camera Section */}
               <div className="space-y-3">
-                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
-                  <Camera className="w-4 h-4 text-indigo-500" />
-                  <span>Capture Image <span className="text-red-500">*</span></span>
-                </label>
-                {!isCameraOpen && !capturedImage && (
-                  <button
-                    type="button"
-                    onClick={startCamera}
-                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2"
-                  >
-                    <Camera className="w-5 h-5" />
-                    <span>Open Camera</span>
-                  </button>
-                )}
-                {isCameraOpen && (
-                  <div className="space-y-3">
-                    <div className="relative bg-gray-900 rounded-xl overflow-hidden">
-                      <video ref={videoRef} className="w-full h-64 object-cover" playsInline />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={takePhoto}
-                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center space-x-2"
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>Take Photo</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={stopCamera}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold rounded-xl shadow-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200 flex items-center justify-center space-x-2"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        <span>Cancel</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-                {capturedImage && (
-                  <div className="space-y-3">
-                    <div className="relative">
-                      <img
-                        src={capturedImage}
-                        alt="Captured"
-                        className="w-full h-64 object-cover rounded-xl border-2 border-green-200"
-                      />
-                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
-                        <CheckCircle className="w-3 h-3" />
-                        <span>Image Captured</span>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={startCamera}
-                      className="w-full px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
-                    >
-                      Retake Photo
-                    </button>
-                  </div>
-                )}
-                <canvas ref={canvasRef} width="640" height="480" className="hidden" />
-              </div>
+  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+    <Camera className="w-4 h-4 text-indigo-500" />
+    <span>Capture Image</span> {/* Removed <span className="text-red-500">*</span> */}
+  </label>
+  {!isCameraOpen && !capturedImage && (
+    <button
+      type="button"
+      onClick={startCamera}
+      className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2"
+    >
+      <Camera className="w-5 h-5" />
+      <span>Open Camera</span>
+    </button>
+  )}
+  {isCameraOpen && (
+    <div className="space-y-3">
+      <div className="relative bg-gray-900 rounded-xl overflow-hidden">
+        <video ref={videoRef} className="w-full h-64 object-cover" playsInline />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={takePhoto}
+          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center space-x-2"
+        >
+          <Camera className="w-4 h-4" />
+          <span>Take Photo</span>
+        </button>
+        <button
+          type="button"
+          onClick={stopCamera}
+          className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold rounded-xl shadow-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200 flex items-center justify-center space-x-2"
+        >
+          <XCircle className="w-4 h-4" />
+          <span>Cancel</span>
+        </button>
+      </div>
+    </div>
+  )}
+  {capturedImage && (
+    <div className="space-y-3">
+      <div className="relative">
+        <img
+          src={capturedImage}
+          alt="Captured"
+          className="w-full h-64 object-cover rounded-xl border-2 border-green-200"
+        />
+        <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+          <CheckCircle className="w-3 h-3" />
+          <span>Image Captured</span>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={startCamera}
+        className="w-full px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+      >
+        Retake Photo
+      </button>
+    </div>
+  )}
+  <canvas ref={canvasRef} width="640" height="480" className="hidden" />
+</div>
 
               {/* Submit Button */}
               <div className="pt-4">
