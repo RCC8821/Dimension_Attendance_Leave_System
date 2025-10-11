@@ -245,7 +245,7 @@ console.log(formattedEmployees)
         <div className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-t-2xl p-6 text-center text-white">
           <div className="flex items-center justify-center gap-3 mb-2">
             <img
-              src="/rcc-logo.png" // Ensure the path is correct
+              src="dimensions-logo.jpg" // Ensure the path is correct
               className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg"
               alt="RCC Logo"
             />

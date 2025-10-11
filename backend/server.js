@@ -73,82 +73,6 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Dropdown Users Data API
-
-// app.get("/api/DropdownUserData", async (req, res) => {
-//   try {
-//     const response = await sheets.spreadsheets.values.get({
-//       spreadsheetId,
-//       range: "ALL DOER NAMES RCC/DIMENSION!A:I", // Includes Sites (column I)
-//     });
-
-//     const rows = response.data.values || [];
-//     console.log("Raw Google Sheets response:", rows); // Log raw data
-
-//     if (rows.length === 0) {
-//       return res.status(400).json({ error: "No data found in the sheet" });
-//     }
-
-//     let headers = rows[0] || [];
-//     console.log("Headers:", headers); // Log headers
-
-//     if (!headers.length || headers.some((h) => !h || h.trim() === "")) {
-//       headers = [
-//         "Names",
-//         "EMP Code",
-//         "Mobile No.",
-//         "Email",
-//         "Leave Approval Manager",
-//         "Department",
-//         "Designation",
-//         "Sites",
-//       ];
-//       console.warn(
-//         "Using default headers due to invalid or missing headers in sheet"
-//       );
-//     } else {
-//       headers = headers.map((header) => header.trim());
-//     }
-
-//     if (!headers.includes("Sites")) {
-//       console.warn("Sites column not found in headers. Check Google Sheet.");
-//     }
-
-//     const data = rows.slice(1).map((row, index) => {
-//       const rowData = {};
-//       headers.forEach((header, colIndex) => {
-//         rowData[header] = row[colIndex] ? row[colIndex].trim() : "";
-//       });
-//       console.log(`Processed row ${index + 1}:`, rowData); // Log each row
-//       return rowData;
-//     });
-
-//     const filteredData = data.filter(
-//       (row) => row["Names"] && row["Names"].trim() !== ""
-//     );
-//     console.log("Filtered data:", filteredData); // Log filtered data
-
-//     if (
-//       filteredData.every((row) => !row["Sites"] || row["Sites"].trim() === "")
-//     ) {
-//       console.warn("Sites column is empty for all rows");
-//     }
-
-//     res.status(200).json({
-//       success: true,
-//       count: filteredData.length,
-//       data: filteredData,
-//     });
-//   } catch (error) {
-//     console.error("Error fetching data from Google Sheet:", error.message);
-//     res.status(500).json({
-//       success: false,
-//       error: "Failed to fetch data from Google Sheet",
-//       details: error.message,
-//     });
-//   }
-// });
-
 
 // Dropdown Users Data API
 app.get("/api/DropdownUserData", async (req, res) => {
@@ -454,6 +378,7 @@ app.post("/api/attendance-Form", async (req, res) => {
       image,
     } = req.body;
 
+    // Validate required fields
     if (
       !email ||
       !name ||
@@ -468,35 +393,47 @@ app.post("/api/attendance-Form", async (req, res) => {
         .json({ error: "All required fields must be provided" });
     }
 
-    let imageUrl = null;
-    if (image) {
-      const fileName = `attendance_${email}_${Date.now()}`;
-      imageUrl = await uploadToCloudinary(image, fileName);
+    // Handle image upload only if provided
+    let imageUrl = "";
+    if (image && typeof image === "string" && image.startsWith("data:image/")) {
+      try {
+        const fileName = `attendance_${email}_${Date.now()}`;
+        imageUrl = await uploadToCloudinary(image, fileName);
+      } catch (uploadError) {
+        console.error("Error uploading image to Cloudinary:", uploadError.message);
+        return res.status(500).json({
+          error: "Failed to upload image",
+          details: uploadError.message,
+        });
+      }
     }
 
-  const now = new Date();
-const istOptions = {
-  timeZone: "Asia/Kolkata",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  hour12: false,
-};
-const istFormatter = new Intl.DateTimeFormat("en-IN", istOptions);
-const parts = istFormatter.formatToParts(now);
+    // Generate timestamp in IST
+    const now = new Date();
+    const istOptions = {
+      timeZone: "Asia/Kolkata",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    };
+    const istFormatter = new Intl.DateTimeFormat("en-IN", istOptions);
+    const parts = istFormatter.formatToParts(now);
 
-const year = parts.find((p) => p.type === "year").value;
-const month = parts.find((p) => p.type === "month").value;
-const day = parts.find((p) => p.type === "day").value;
-const hour = parts.find((p) => p.type === "hour").value;
-const minute = parts.find((p) => p.type === "minute").value;
-const second = parts.find((p) => p.type === "second").value;
+    const year = parts.find((p) => p.type === "year").value;
+    const month = parts.find((p) => p.type === "month").value;
+    const day = parts.find((p) => p.type === "day").value;
+    const hour = parts.find((p) => p.type === "hour").value;
+    const minute = parts.find((p) => p.type === "minute").value;
+    const second = parts.find((p) => p.type === "second").value;
 
-const timestamp = `${day}/${month}/${year} ${hour}:${minute}:${second}`;
-console.log(timestamp)
+    const timestamp = `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+    console.log("Timestamp:", timestamp);
+
+    // Prepare data for Google Sheets
     const values = [
       [
         timestamp,
@@ -507,10 +444,11 @@ console.log(timestamp)
         entryType,
         workShift,
         locationName,
-        imageUrl || "",
+        imageUrl,
       ],
     ];
 
+    // Append data to Google Sheets
     await sheets.spreadsheets.values.append({
       spreadsheetId,
       range: "Attendance!A:I",
@@ -528,7 +466,6 @@ console.log(timestamp)
       .json({ error: "Internal server error", details: error.message });
   }
 });
-
 
 app.get("/api/getFormData", async (req, res) => {
   try {

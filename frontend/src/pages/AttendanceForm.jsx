@@ -1,5 +1,1147 @@
+
+// import { useState, useEffect, useRef } from "react";
+// import {
+//   Camera,
+//   MapPin,
+//   Clock,
+//   User,
+//   Mail,
+//   Building,
+//   CheckCircle,
+//   XCircle,
+//   Loader2,
+// } from "lucide-react";
+
+// function AttendanceForm() {
+//   const [formData, setFormData] = useState({
+//     email: "",
+//     name: "",
+//     empCode: "",
+//     site: "",
+//     entryType: "",
+//     workShift: "",
+//     locationName: "",
+//     image: null,
+//   });
+
+//   const [userData, setUserData] = useState([]);
+//   const [filteredEmails, setFilteredEmails] = useState([]);
+//   const [filteredSites, setFilteredSites] = useState([]);
+//   const [allSites, setAllSites] = useState([]); // New state to store all sites
+//   const [nearbyOffices, setNearbyOffices] = useState([]);
+//   const [isCameraOpen, setIsCameraOpen] = useState(false);
+//   const [capturedImage, setCapturedImage] = useState(null);
+//   const [attendanceStatus, setAttendanceStatus] = useState({
+//     hasCheckedIn: false,
+//     hasCheckedOut: false,
+//   });
+//   const [errorMessage, setErrorMessage] = useState("");
+//   const [isDataLoading, setIsDataLoading] = useState(false);
+//   const [isSubmitting, setIsSubmitting] = useState(false);
+//   const [locationLoading, setLocationLoading] = useState(false);
+//   const [showSuccess, setShowSuccess] = useState(false);
+//   const [successMessage, setSuccessMessage] = useState("");
+//   const [isEmailDropdownOpen, setIsEmailDropdownOpen] = useState(false);
+//   const [isSiteDropdownOpen, setIsSiteDropdownOpen] = useState(false);
+
+//   const videoRef = useRef(null);
+//   const canvasRef = useRef(null);
+
+//   const offices = [
+//     { name: "Home", lat: 23.231878, lng: 77.455833 },
+//     { name: "Office/कार्यालय", lat: 23.19775059819785, lng: 77.41701272524529 },
+//     { name: "RNTU/आरएनटीयू", lat: 23.130614, lng: 77.565729 },
+//     { name: "Dubey Ji Site/दुबे जी साइट", lat: 23.124046, lng: 77.497393 },
+//     { name: "Regional Center West", lat: 37.7749, lng: -122.4208 },
+//     { name: "Satellite Office 1", lat: 37.776, lng: -122.4194 },
+//     { name: "Satellite Office 2", lat: 37.7738, lng: -122.4194 },
+//     { name: "Admin Building", lat: 37.7752, lng: -122.42 },
+//     { name: "Tech Hub", lat: 37.7745, lng: -122.4188 },
+//     { name: "Support Center", lat: 37.78, lng: -122.41 },
+//   ];
+
+//   const isSpecificRCC =
+//     formData.site.toLowerCase() === "Dimensions Office".toLowerCase();
+
+//   // Fetch attendance status
+//   const fetchAttendanceStatus = async (email) => {
+//     if (
+//       !email ||
+//       typeof email !== "string" ||
+//       !userData.some(
+//         (user) => user.email && user.email.toLowerCase() === email.toLowerCase()
+//       )
+//     ) {
+//       console.log("Invalid email or user not found:", email);
+//       setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+//       return;
+//     }
+
+//     try {
+//       console.log("Fetching attendance status for email:", email);
+
+//       const now = new Date();
+//       const istOptions = {
+//         timeZone: "Asia/Kolkata",
+//         year: "numeric",
+//         month: "2-digit",
+//         day: "2-digit",
+//       };
+//       const yyyyMMddFormatter = new Intl.DateTimeFormat("en-CA", istOptions);
+//       const [year, month, day] = yyyyMMddFormatter.format(now).split("-");
+//       const yyyyMMddDate = `${year}-${month}-${day}`;
+//       console.log("Generated date (YYYY-MM-DD):", yyyyMMddDate);
+
+//       let url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(
+//         email
+//       )}&date=${yyyyMMddDate}`;
+//       console.log("Trying API URL (YYYY-MM-DD):", url);
+//       let response = await fetch(url, { cache: "no-store" });
+
+//       let records = [];
+//       if (!response.ok) {
+//         const errorText = await response.text();
+//         console.error(
+//           "API error with YYYY-MM-DD:",
+//           response.status,
+//           response.statusText,
+//           errorText
+//         );
+
+//         const ddMMyyyyFormatter = new Intl.DateTimeFormat("en-IN", istOptions);
+//         const ddMMyyyyDate = ddMMyyyyFormatter.format(now);
+//         console.log("Falling back to DD/MM/YYYY:", ddMMyyyyDate);
+//         url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(
+//           email
+//         )}&date=${ddMMyyyyDate}`;
+//         response = await fetch(url, { cache: "no-store" });
+//         if (!response.ok) {
+//           const errorText2 = await response.text();
+//           throw new Error(
+//             `Failed to fetch attendance records: ${response.status} ${response.statusText}. Details: ${errorText2}`
+//           );
+//         }
+//       }
+
+//       records = await response.json();
+//       console.log("Attendance API Response:", records);
+
+//       const hasCheckedIn = records.some((record) => {
+//         const entryType = record.EntryType?.trim().toLowerCase();
+//         const site = record.site?.trim().toLowerCase();
+//         return entryType === "in" && site === "Dimensions Office".toLowerCase();
+//       });
+
+//       const hasCheckedOut = records.some((record) => {
+//         const entryType = record.EntryType?.trim().toLowerCase();
+//         const site = record.site?.trim().toLowerCase();
+//         return (
+//           entryType === "out" && site === "Dimensions Office".toLowerCase()
+//         );
+//       });
+
+//       console.log("Attendance Status:", { hasCheckedIn, hasCheckedOut });
+//       setAttendanceStatus({ hasCheckedIn, hasCheckedOut });
+//     } catch (error) {
+//       console.error(
+//         "Error fetching attendance status:",
+//         error.message,
+//         error.stack
+//       );
+//       setErrorMessage(
+//         `Error fetching attendance status: ${
+//           error.message.split("Details:")[1]?.trim() || error.message
+//         }`
+//       );
+//       setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+//     }
+//   };
+
+//   // Fetch user data on mount
+//   useEffect(() => {
+//     const init = async () => {
+//       try {
+//         setIsDataLoading(true);
+//         const res = await fetch(
+//           "https://dimension-attendance-leave-system.vercel.app/api/DropdownUserData",
+//           {
+//             cache: "no-store",
+//             priority: "high",
+//           }
+//         );
+//         const apiData = await res.json();
+//         console.log("Raw API Response:", JSON.stringify(apiData, null, 2));
+
+//         if (!apiData.success) {
+//           throw new Error(apiData.error || "Failed to fetch user data");
+//         }
+
+//         const normalizedData = apiData.data.map((row, index) => {
+//           const site = row["Sites"] || "";
+//           console.log(`Row ${index} Site:`, site);
+//           return {
+//             name: row["Names"] || "",
+//             empCode: row["EMP Code"] || "",
+//             mobile: row["Mobile No."] || "",
+//             email: row["Email"] || "",
+//             site,
+//           };
+//         });
+
+//         const usersWithEmail = normalizedData.filter(
+//           (user) => user.email && typeof user.email === "string"
+//         );
+//         console.log("Users with email:", usersWithEmail);
+
+//         if (usersWithEmail.length === 0) {
+//           setErrorMessage(
+//             "No user data with emails available. Please contact support."
+//           );
+//         }
+
+//         setUserData(usersWithEmail);
+//         setFilteredEmails(usersWithEmail);
+
+//         // Store all sites in a separate state
+//         const sitesFromAPI = normalizedData
+//           .map((user) => user.site)
+//           .filter((site) => site !== null && site !== undefined && site !== "");
+//         console.log("All sites from API:", sitesFromAPI);
+//         console.log("Total sites count:", sitesFromAPI.length);
+//         setAllSites(sitesFromAPI);
+//         setFilteredSites(sitesFromAPI);
+
+//         if (sitesFromAPI.length === 0) {
+//           console.warn("No valid Sites data received");
+//           setErrorMessage(
+//             "No site data available. Please contact the administrator."
+//           );
+//         }
+//       } catch (error) {
+//         console.error("Error fetching user data:", error);
+//         setErrorMessage(
+//           "Failed to load user data from API. Please try again later."
+//         );
+//       } finally {
+//         setIsDataLoading(false);
+//       }
+//     };
+
+//     init();
+//   }, []);
+
+//   // Fetch attendance status when email or site changes
+//   useEffect(() => {
+//     if (formData.email && isSpecificRCC) {
+//       fetchAttendanceStatus(formData.email);
+//     } else {
+//       setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+//     }
+//   }, [formData.email, formData.site]);
+
+//   // Reset form fields when email changes
+//   useEffect(() => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       entryType: "",
+//       locationName: "",
+//       image: null,
+//     }));
+//     setCapturedImage(null);
+//     setNearbyOffices([]);
+//   }, [formData.email]);
+
+//   const handleEmailSelect = (email) => {
+//     const today = new Date().toISOString().split("T")[0];
+//     const storedEmail = localStorage.getItem("userEmail");
+
+//     if (storedEmail && storedEmail.toLowerCase() !== email.toLowerCase()) {
+//       setErrorMessage(
+//         "Another email is already used for today's attendance. Please use the same email."
+//       );
+//       return;
+//     }
+
+//     const user = userData.find(
+//       (u) => u.email && u.email.toLowerCase() === email.toLowerCase()
+//     );
+//     if (user) {
+//       setFormData((prev) => ({
+//         ...prev,
+//         email: user.email,
+//         name: user.name,
+//         empCode: user.empCode,
+//         site: "Dimensions Office", // Default to Dimensions Office
+//         entryType: "",
+//         workShift: "",
+//         locationName: "",
+//         image: null,
+//       }));
+//       setFilteredEmails(userData);
+//       setIsEmailDropdownOpen(false);
+//       setErrorMessage("");
+//       localStorage.setItem("userEmail", user.email);
+//       fetchAttendanceStatus(user.email);
+//     } else {
+//       setErrorMessage(
+//         "Selected email is not valid. Please choose from the dropdown."
+//       );
+//     }
+//   };
+
+//   const handleEmailSearch = (e) => {
+//     const searchTerm = e.target.value.toLowerCase();
+//     setFormData((prev) => ({ ...prev, email: e.target.value }));
+
+//     if (searchTerm === "") {
+//       setFilteredEmails(userData);
+//     } else {
+//       const filtered = userData.filter(
+//         (user) =>
+//           user.email &&
+//           typeof user.email === "string" &&
+//           user.email.toLowerCase().includes(searchTerm)
+//       );
+//       setFilteredEmails(filtered);
+//     }
+//     setIsEmailDropdownOpen(true);
+//   };
+
+//   const handleEmailFocus = () => {
+//     setFilteredEmails(userData);
+//     setIsEmailDropdownOpen(true);
+//   };
+
+//   const handleEmailBlur = () => {
+//     setTimeout(() => {
+//       setIsEmailDropdownOpen(false);
+//     }, 300);
+//   };
+
+//   const handleSiteSelect = (site) => {
+//     console.log("Selected site:", site);
+//     setFormData((prev) => ({
+//       ...prev,
+//       site,
+//       entryType: "",
+//       locationName: "",
+//       image: null,
+//     }));
+//     setCapturedImage(null);
+//     setNearbyOffices([]);
+//     setIsSiteDropdownOpen(false);
+//     if (formData.email) {
+//       fetchAttendanceStatus(formData.email);
+//     }
+//   };
+
+//   const handleSiteSearch = (e) => {
+//     const searchTerm = e.target.value.toLowerCase();
+//     setFormData((prev) => ({ ...prev, site: e.target.value }));
+
+//     console.log("Search term:", searchTerm);
+//     console.log("All sites for search:", allSites);
+//     const filtered = allSites.filter(
+//       (site) =>
+//         site && typeof site === "string" && site.toLowerCase().includes(searchTerm)
+//     );
+//     console.log("Filtered sites for search:", filtered);
+//     setFilteredSites(filtered);
+//     setIsSiteDropdownOpen(true);
+//   };
+
+//   const handleSiteFocus = () => {
+//     console.log("All sites on focus:", allSites);
+//     setFilteredSites(allSites);
+//     setIsSiteDropdownOpen(true);
+//   };
+
+//   const handleSiteBlur = () => {
+//     setTimeout(() => setIsSiteDropdownOpen(false), 300);
+//   };
+
+//   const handleChange = (e) => {
+//     const { name, value } = e.target;
+//     setFormData((prev) => ({ ...prev, [name]: value }));
+//   };
+
+//   const calculateDistance = (lat1, lon1, lat2, lon2) => {
+//     const R = 6371e3;
+//     const φ1 = (lat1 * Math.PI) / 180;
+//     const φ2 = (lat2 * Math.PI) / 180;
+//     const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+//     const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+//     const a =
+//       Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+//       Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+//     return R * c;
+//   };
+
+//   const handleGetNearbyOffices = () => {
+//     setLocationLoading(true);
+//     if (navigator.geolocation) {
+//       navigator.geolocation.getCurrentPosition(
+//         (position) => {
+//           const userLat = position.coords.latitude;
+//           const userLng = position.coords.longitude;
+//           console.log("Current location:", userLat, userLng);
+
+//           const filteredOffices = offices.filter(
+//             (office) =>
+//               calculateDistance(userLat, userLng, office.lat, office.lng) <= 300
+//           );
+//           setNearbyOffices(filteredOffices);
+
+//           const nearbyOfficeNames = filteredOffices
+//             .map((office) => office.name)
+//             .join(", ");
+//           setFormData((prev) => ({
+//             ...prev,
+//             locationName: nearbyOfficeNames || "No offices within 300m",
+//           }));
+//           setLocationLoading(false);
+//         },
+//         (error) => {
+//           console.error("Error fetching location:", error.message);
+//           setErrorMessage(
+//             "Unable to fetch your location. Please enable geolocation."
+//           );
+//           setFormData((prev) => ({
+//             ...prev,
+//             locationName: "Location access denied",
+//           }));
+//           setLocationLoading(false);
+//         }
+//       );
+//     } else {
+//       setErrorMessage("Geolocation is not supported by this browser.");
+//       setFormData((prev) => ({
+//         ...prev,
+//         locationName: "Geolocation not supported",
+//       }));
+//       setLocationLoading(false);
+//     }
+//   };
+
+//   const startCamera = async () => {
+//     setIsCameraOpen(true);
+//     setCapturedImage(null);
+//     try {
+//       const stream = await navigator.mediaDevices.getUserMedia({
+//         video: { facingMode: "user" },
+//       });
+//       if (videoRef.current) {
+//         videoRef.current.srcObject = stream;
+//         videoRef.current.play();
+//       }
+//     } catch (err) {
+//       console.error("Error accessing camera:", err.message);
+//       setErrorMessage("Unable to access camera. Please check permissions.");
+//       setIsCameraOpen(false);
+//     }
+//   };
+
+//   const takePhoto = () => {
+//     if (canvasRef.current && videoRef.current) {
+//       const context = canvasRef.current.getContext("2d");
+//       context.drawImage(
+//         videoRef.current,
+//         0,
+//         0,
+//         canvasRef.current.width,
+//         canvasRef.current.height
+//       );
+//       canvasRef.current.toBlob((blob) => {
+//         setFormData((prev) => ({ ...prev, image: blob }));
+//         setCapturedImage(URL.createObjectURL(blob));
+//         stopCamera();
+//       }, "image/jpeg");
+//     }
+//   };
+
+//   const stopCamera = () => {
+//     if (videoRef.current && videoRef.current.srcObject) {
+//       const tracks = videoRef.current.srcObject.getTracks();
+//       tracks.forEach((track) => track.stop());
+//     }
+//     setIsCameraOpen(false);
+//   };
+
+//   const toBase64 = (blob) =>
+//     new Promise((resolve, reject) => {
+//       const reader = new FileReader();
+//       reader.readAsDataURL(blob);
+//       reader.onload = () => resolve(reader.result);
+//       reader.onerror = (error) => reject(error);
+//     });
+
+//   const handleSubmit = async () => {
+//     setIsSubmitting(true);
+//     setErrorMessage("");
+
+//     const requiredFields = {
+//       email: "Email Address",
+//       name: "Name",
+//       empCode: "Emp Code",
+//       site: "Site",
+//       entryType: "Entry Type",
+//       workShift: "Work Shift",
+//       locationName: "Location Name",
+//       image: "Image",
+//     };
+
+//     const missingFields = Object.keys(requiredFields).filter(
+//       (key) => !formData[key] || formData[key] === ""
+//     );
+//     if (missingFields.length > 0) {
+//       const missingFieldNames = missingFields
+//         .map((key) => requiredFields[key])
+//         .join(", ");
+//       setErrorMessage(
+//         `Please fill in all required fields: ${missingFieldNames}`
+//       );
+//       setIsSubmitting(false);
+//       return;
+//     }
+
+//     const user = userData.find(
+//       (user) =>
+//         user.email && user.email.toLowerCase() === formData.email.toLowerCase()
+//     );
+//     if (!user) {
+//       setErrorMessage(
+//         "Invalid email. Please select a valid email from the suggestions."
+//       );
+//       setIsSubmitting(false);
+//       return;
+//     }
+
+//     if (user.name !== formData.name || user.empCode !== formData.empCode) {
+//       setErrorMessage(
+//         "Name or Employee Code does not match the selected email."
+//       );
+//       setIsSubmitting(false);
+//       return;
+//     }
+
+//     const today = new Date().toISOString().split("T")[0];
+//     const storedEmail = localStorage.getItem("userEmail");
+//     if (
+//       storedEmail &&
+//       storedEmail.toLowerCase() !== formData.email.toLowerCase()
+//     ) {
+//       setErrorMessage(
+//         "Another email is already used for today's attendance. Please use the same email."
+//       );
+//       setIsSubmitting(false);
+//       return;
+//     }
+
+//     await fetchAttendanceStatus(formData.email);
+
+//     const { hasCheckedIn, hasCheckedOut } = attendanceStatus;
+
+//     if (isSpecificRCC) {
+//       if (formData.entryType === "Out" && !hasCheckedIn) {
+//         setErrorMessage("You must Check In before Checking Out.");
+//         setIsSubmitting(false);
+//         return;
+//       }
+//       if (formData.entryType === "In" && hasCheckedIn) {
+//         setErrorMessage("You have already checked in today.");
+//         setIsSubmitting(false);
+//         return;
+//       }
+//       if (formData.entryType === "Out" && hasCheckedOut) {
+//         setErrorMessage("You have already checked out today.");
+//         setIsSubmitting(false);
+//         return;
+//       }
+//     }
+
+//     try {
+//       const imageBase64 = await toBase64(formData.image);
+//       const payload = {
+//         email: formData.email,
+//         name: formData.name,
+//         empCode: formData.empCode,
+//         site: formData.site,
+//         entryType: formData.entryType,
+//         workShift: formData.workShift,
+//         locationName: formData.locationName,
+//         image: imageBase64,
+//       };
+
+//       const response = await fetch(
+//         "https://dimension-attendance-leave-system.vercel.app/api/attendance-Form",
+//         {
+//           method: "POST",
+//           headers: {
+//             "Content-Type": "application/json",
+//           },
+//           body: JSON.stringify(payload),
+//         }
+//       );
+
+//       const responseData = await response.json();
+//       if (response.ok && responseData.result === "success") {
+//         setSuccessMessage(
+//           `Attendance ${
+//             formData.entryType === "In" ? "Check In" : "Check Out"
+//           } submitted successfully!`
+//         );
+//         setShowSuccess(true);
+
+//         localStorage.setItem("userEmail", formData.email);
+//         await fetchAttendanceStatus(formData.email);
+
+//         setTimeout(() => setShowSuccess(false), 3000);
+
+//         setFormData({
+//           email: "",
+//           name: "",
+//           empCode: "",
+//           site: "",
+//           entryType: "",
+//           workShift: "",
+//           locationName: "",
+//           image: null,
+//         });
+//         setNearbyOffices([]);
+//         setCapturedImage(null);
+//         setFilteredEmails(userData);
+//         setFilteredSites(allSites);
+//         setIsEmailDropdownOpen(false);
+//         setIsSiteDropdownOpen(false);
+//         setErrorMessage("");
+//         setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+//       } else {
+//         setErrorMessage(
+//           `Error submitting attendance: ${
+//             responseData.error || "Please try again."
+//           }${responseData.details ? ` (${responseData.details})` : ""}`
+//         );
+//       }
+//     } catch (error) {
+//       console.error("Error submitting attendance:", error.message, error.stack);
+//       setErrorMessage(`Error submitting attendance: ${error.message}`);
+//     } finally {
+//       setIsSubmitting(false);
+//     }
+//   };
+
+//   const allEntryTypes = [
+//     { value: "In", label: "Check In" },
+//     { value: "Out", label: "Check Out" },
+//   ];
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 py-4 px-4 sm:px-6 lg:px-8">
+//       <div className="max-w-2xl mx-auto">
+//         {showSuccess && (
+//           <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-down">
+//             <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl border border-green-400 flex items-center space-x-3 max-w-sm">
+//               <CheckCircle className="w-6 h-6 animate-bounce" />
+//               <div>
+//                 <p className="font-semibold text-sm">Success!</p>
+//                 <p className="text-xs opacity-90">{successMessage}</p>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         {isDataLoading && (
+//           <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+//             <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 max-w-sm mx-4">
+//               <div className="text-center">
+//                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
+//                   <Loader2 className="w-8 h-8 text-white animate-spin" />
+//                 </div>
+//                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
+//                   Loading User Data
+//                 </h3>
+//                 <p className="text-gray-600 text-sm">
+//                   Please wait while we fetch user information...
+//                 </p>
+//                 <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+//                   <div
+//                     className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse"
+//                     style={{ width: "70%" }}
+//                   ></div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         {isSubmitting && (
+//           <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+//             <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 max-w-sm mx-4">
+//               <div className="text-center">
+//                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
+//                   <Loader2 className="w-8 h-8 text-white animate-spin" />
+//                 </div>
+//                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
+//                   Submitting Attendance
+//                 </h3>
+//                 <p className="text-gray-600 text-sm">
+//                   Please wait while we process your request...
+//                 </p>
+//                 <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
+//                   <div
+//                     className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse"
+//                     style={{ width: "70%" }}
+//                   ></div>
+//                 </div>
+//               </div>
+//             </div>
+//           </div>
+//         )}
+
+//         <div className="text-center mb-8">
+//           <img
+//             src="dimensions-logo.jpg"
+//             className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg"
+//             alt="dimensions Logo"
+//           />
+//           <h1 className="text-3xl font-bold text-white">Attendance Form</h1>
+//           <p className="text-white mt-2">Mark your attendance with ease</p>
+//         </div>
+
+//         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+//           <div className="p-8">
+//             {errorMessage && (
+//               <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
+//                 <div className="flex items-center space-x-3">
+//                   <XCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+//                   <p className="text-red-700 text-sm">{errorMessage}</p>
+//                 </div>
+//               </div>
+//             )}
+
+//             {filteredEmails.length === 0 && !formData.email && (
+//               <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+//                 <p className="text-yellow-700 text-sm">
+//                   No valid email suggestions available. Please contact support.
+//                 </p>
+//               </div>
+//             )}
+
+//             {filteredSites.length === 0 && !formData.site && (
+//               <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+//                 <p className="text-yellow-700 text-sm">
+//                   No valid site suggestions available. Please contact support.
+//                 </p>
+//               </div>
+//             )}
+
+//             <div className="space-y-6">
+//               <div className="space-y-2">
+//                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                   <Mail className="w-4 h-4 text-indigo-500" />
+//                   <span>
+//                     Email Address <span className="text-red-500">*</span>
+//                   </span>
+//                 </label>
+//                 <div className="relative">
+//                   <input
+//                     type="text"
+//                     value={formData.email}
+//                     onChange={handleEmailSearch}
+//                     onFocus={handleEmailFocus}
+//                     onBlur={handleEmailBlur}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pl-11"
+//                     placeholder="Click to select email..."
+//                     autoComplete="off"
+//                   />
+//                   <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+//                   {formData.email && (
+//                     <button
+//                       type="button"
+//                       onClick={() => {
+//                         setFormData((prev) => ({
+//                           ...prev,
+//                           email: "",
+//                           name: "",
+//                           empCode: "",
+//                           site: "",
+//                         }));
+//                         setFilteredEmails(userData);
+//                         setIsEmailDropdownOpen(false);
+//                         setErrorMessage("");
+//                         setAttendanceStatus({
+//                           hasCheckedIn: false,
+//                           hasCheckedOut: false,
+//                         });
+//                       }}
+//                       className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
+//                     >
+//                       <XCircle className="w-5 h-5" />
+//                     </button>
+//                   )}
+//                   {isEmailDropdownOpen && filteredEmails.length > 0 && (
+//                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto">
+//                       {filteredEmails.map((user) => (
+//                         <div
+//                           key={user.email}
+//                           onMouseDown={() => handleEmailSelect(user.email)}
+//                           className="px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0"
+//                         >
+//                           <div className="font-medium text-gray-900">
+//                             {user.email}
+//                           </div>
+//                           <div className="text-sm text-gray-500">
+//                             {user.name || "(No name)"} -{" "}
+//                             {user.empCode || "(No emp code)"}
+//                           </div>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   )}
+//                 </div>
+//               </div>
+
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//                 <div className="space-y-2">
+//                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                     <User className="w-4 h-4 text-indigo-500" />
+//                     <span>
+//                       Name <span className="text-red-500">*</span>
+//                     </span>
+//                   </label>
+//                   <input
+//                     type="text"
+//                     value={formData.name}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+//                     readOnly
+//                   />
+//                 </div>
+//                 <div className="space-y-2">
+//                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                     <User className="w-4 h-4 text-indigo-500" />
+//                     <span>
+//                       Emp Code <span className="text-red-500">*</span>
+//                     </span>
+//                   </label>
+//                   <input
+//                     type="text"
+//                     value={formData.empCode}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700"
+//                     readOnly
+//                   />
+//                 </div>
+//               </div>
+
+//               <div className="space-y-2">
+//                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                   <Building className="w-4 h-4 text-indigo-500" />
+//                   <span>
+//                     Site <span className="text-red-500">*</span>
+//                   </span>
+//                 </label>
+//                 <div className="relative">
+//                   <input
+//                     type="text"
+//                     value={formData.site}
+//                     onChange={handleSiteSearch}
+//                     onFocus={handleSiteFocus}
+//                     onBlur={handleSiteBlur}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pl-11"
+//                     placeholder="Type to search site..."
+//                     autoComplete="off"
+//                   />
+//                   <Building className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+//                   {isSiteDropdownOpen && filteredSites.length > 0 && (
+//                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-[600px] overflow-y-auto">
+//                       {filteredSites.map((site, index) => (
+//                         <div
+//                           key={`${site}-${index}`}
+//                           onMouseDown={() => handleSiteSelect(site)}
+//                           className="px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0"
+//                         >
+//                           {site || "(No site name)"}
+//                         </div>
+//                       ))}
+//                     </div>
+//                   )}
+//                 </div>
+//               </div>
+
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+//                 <div className="space-y-2">
+//                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                     <CheckCircle className="w-4 h-4 text-indigo-500" />
+//                     <span>
+//                       Entry Type <span className="text-red-500">*</span>
+//                     </span>
+//                   </label>
+//                   {isSpecificRCC &&
+//                   attendanceStatus.hasCheckedIn &&
+//                   attendanceStatus.hasCheckedOut ? (
+//                     <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
+//                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+//                       <p className="text-green-700 text-sm">
+//                         You have completed Check In and Check Out for today.
+//                       </p>
+//                     </div>
+//                   ) : (
+//                     <select
+//                       name="entryType"
+//                       value={formData.entryType}
+//                       onChange={handleChange}
+//                       className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white"
+//                     >
+//                       <option value="">-- Select Entry Type --</option>
+//                       {(() => {
+//                         let entryOptions = allEntryTypes;
+//                         if (isSpecificRCC) {
+//                           entryOptions = allEntryTypes.filter((type) => {
+//                             if (
+//                               type.value === "In" &&
+//                               !attendanceStatus.hasCheckedIn
+//                             )
+//                               return true;
+//                             if (
+//                               type.value === "Out" &&
+//                               attendanceStatus.hasCheckedIn &&
+//                               !attendanceStatus.hasCheckedOut
+//                             )
+//                               return true;
+//                             return false;
+//                           });
+//                         }
+//                         return entryOptions.map((type) => (
+//                           <option key={type.value} value={type.value}>
+//                             {type.label}
+//                           </option>
+//                         ));
+//                       })()}
+//                     </select>
+//                   )}
+//                 </div>
+//                 <div className="space-y-2">
+//                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                     <Clock className="w-4 h-4 text-indigo-500" />
+//                     <span>
+//                       Work Shift <span className="text-red-500">*</span>
+//                     </span>
+//                   </label>
+//                   <select
+//                     name="workShift"
+//                     value={formData.workShift}
+//                     onChange={handleChange}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white"
+//                   >
+//                     <option value="">-- Select Work Shift --</option>
+//                     <option value="09:00 AM - 06:00 PM">
+//                       09:00 AM - 07:00 PM
+//                     </option>
+//                     <option value="09:30 AM - 06:00 PM">
+//                       09:30 AM - 06:00 PM
+//                     </option>
+//                     <option value="02:00 PM - 06:00 PM">
+//                       10:00 AM - 05:00 PM
+//                     </option>
+//                     <option value="09:00 PM - 01:00 PM">
+//                       10:00 AM - 06:00 PM
+//                     </option>
+//                     <option value="08:00 AM - 04:00 PM">
+//                       10:00 AM - 02:00 PM
+//                     </option>
+//                     <option value="08:00 AM - 04:00 PM">
+//                       02:00 AM - 06:00 PM
+//                     </option>
+//                     <option value="Sunday">Sunday</option>
+//                   </select>
+//                 </div>
+//               </div>
+
+//               <div className="space-y-3">
+//                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                   <MapPin className="w-4 h-4 text-indigo-500" />
+//                   <span>
+//                     Location Name <span className="text-red-500">*</span>
+//                   </span>
+//                 </label>
+//                 <div className="relative">
+//                   <input
+//                     type="text"
+//                     value={formData.locationName}
+//                     className="w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 pl-11"
+//                     placeholder="Click 'Get Nearby Offices' to populate"
+//                     readOnly
+//                   />
+//                   <MapPin className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
+//                 </div>
+//                 <button
+//                   type="button"
+//                   onClick={handleGetNearbyOffices}
+//                   disabled={locationLoading}
+//                   className="w-full px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold rounded-xl shadow-lg hover:from-emerald-600 hover:to-teal-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+//                 >
+//                   {locationLoading ? (
+//                     <>
+//                       <Loader2 className="w-5 h-5 animate-spin" />
+//                       <span>Getting Location...</span>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <MapPin className="w-5 h-5" />
+//                       <span>Get Nearby Offices</span>
+//                     </>
+//                   )}
+//                 </button>
+//               </div>
+
+//               <div className="space-y-3">
+//                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+//                   <Camera className="w-4 h-4 text-indigo-500" />
+//                   <span>
+//                     Capture Image <span className="text-red-500">*</span>
+//                   </span>
+//                 </label>
+//                 {!isCameraOpen && !capturedImage && (
+//                   <button
+//                     type="button"
+//                     onClick={startCamera}
+//                     className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2"
+//                   >
+//                     <Camera className="w-5 h-5" />
+//                     <span>Open Camera</span>
+//                   </button>
+//                 )}
+//                 {isCameraOpen && (
+//                   <div className="space-y-3">
+//                     <div className="relative bg-gray-900 rounded-xl overflow-hidden">
+//                       <video
+//                         ref={videoRef}
+//                         className="w-full h-64 object-cover"
+//                         playsInline
+//                       />
+//                     </div>
+//                     <div className="grid grid-cols-2 gap-3">
+//                       <button
+//                         type="button"
+//                         onClick={takePhoto}
+//                         className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center space-x-2"
+//                       >
+//                         <Camera className="w-4 h-4" />
+//                         <span>Take Photo</span>
+//                       </button>
+//                       <button
+//                         type="button"
+//                         onClick={stopCamera}
+//                         className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold rounded-xl shadow-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200 flex items-center justify-center space-x-2"
+//                       >
+//                         <XCircle className="w-4 h-4" />
+//                         <span>Cancel</span>
+//                       </button>
+//                     </div>
+//                   </div>
+//                 )}
+//                 {capturedImage && (
+//                   <div className="space-y-3">
+//                     <div className="relative">
+//                       <img
+//                         src={capturedImage}
+//                         alt="Captured"
+//                         className="w-full h-64 object-cover rounded-xl border-2 border-green-200"
+//                       />
+//                       <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+//                         <CheckCircle className="w-3 h-3" />
+//                         <span>Image Captured</span>
+//                       </div>
+//                     </div>
+//                     <button
+//                       type="button"
+//                       onClick={startCamera}
+//                       className="w-full px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+//                     >
+//                       Retake Photo
+//                     </button>
+//                   </div>
+//                 )}
+//                 <canvas
+//                   ref={canvasRef}
+//                   width="640"
+//                   height="480"
+//                   className="hidden"
+//                 />
+//               </div>
+
+//               <div className="pt-4">
+//                 <button
+//                   type="button"
+//                   onClick={handleSubmit}
+//                   disabled={isSubmitting}
+//                   className={`w-full px-6 py-4 font-semibold rounded-xl shadow-lg transition-all duration-200 ${
+//                     isSubmitting
+//                       ? "bg-indigo-400 text-white cursor-wait"
+//                       : "bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:from-indigo-600 hover:to-purple-700 transform hover:scale-105"
+//                   } flex items-center justify-center space-x-2`}
+//                 >
+//                   {isSubmitting ? (
+//                     <>
+//                       <Loader2 className="w-5 h-5 animate-spin" />
+//                       <span>Submitting...</span>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <CheckCircle className="w-5 h-5" />
+//                       <span>Submit Attendance</span>
+//                     </>
+//                   )}
+//                 </button>
+//               </div>
+//             </div>
+//           </div>
+//         </div>
+
+//         <div className="text-center mt-8">
+//           <p className="text-gray-500 text-sm">
+//             © 2025 Attendance Portal. Secure & Reliable.
+//           </p>
+//         </div>
+//       </div>
+
+//       <style jsx>{`
+//         @keyframes fade-in-down {
+//           0% {
+//             opacity: 0;
+//             transform: translate(-50%, -20px);
+//           }
+//           100% {
+//             opacity: 1;
+//             transform: translate(-50%, 0);
+//           }
+//         }
+//         .animate-fade-in-down {
+//           animation: fade-in-down 0.5s ease-out;
+//         }
+//       `}</style>
+//     </div>
+//   );
+// }
+
+// export default AttendanceForm;
+
+
+
+
 import { useState, useEffect, useRef } from "react";
-import { Camera, MapPin, Clock, User, Mail, Building, CheckCircle, XCircle, Loader2 } from "lucide-react";
+import {
+  Camera,
+  MapPin,
+  Clock,
+  User,
+  Mail,
+  Building,
+  CheckCircle,
+  XCircle,
+  Loader2,
+} from "lucide-react";
 
 function AttendanceForm() {
   const [formData, setFormData] = useState({
@@ -16,6 +1158,7 @@ function AttendanceForm() {
   const [userData, setUserData] = useState([]);
   const [filteredEmails, setFilteredEmails] = useState([]);
   const [filteredSites, setFilteredSites] = useState([]);
+  const [allSites, setAllSites] = useState([]);
   const [nearbyOffices, setNearbyOffices] = useState([]);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
@@ -48,127 +1191,168 @@ function AttendanceForm() {
     { name: "Support Center", lat: 37.78, lng: -122.41 },
   ];
 
-  const isSpecificRCC = formData.site.toLowerCase() === "Dimensions Office".toLowerCase();
+  const isSpecificRCC =
+    formData.site.toLowerCase() === "Dimensions Office".toLowerCase();
 
   // Fetch attendance status
-const fetchAttendanceStatus = async (email) => {
-  if (!email || typeof email !== 'string' || !userData.some((user) => user.email && user.email.toLowerCase() === email.toLowerCase())) {
-    console.log('Invalid email or user not found:', email);
-    setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
-    return;
-  }
-
-  try {
-    console.log('Fetching attendance status for email:', email);
-
-    // Generate date in YYYY-MM-DD format
-    const now = new Date();
-    const istOptions = {
-      timeZone: "Asia/Kolkata",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-    };
-    const yyyyMMddFormatter = new Intl.DateTimeFormat("en-CA", istOptions); // YYYY-MM-DD
-    const [year, month, day] = yyyyMMddFormatter.format(now).split('-');
-    const yyyyMMddDate = `${year}-${month}-${day}`; // e.g., "2025-10-03"
-    console.log("Generated date (YYYY-MM-DD):", yyyyMMddDate);
-
-    // Try YYYY-MM-DD first
-    let url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(email)}&date=${yyyyMMddDate}`;
-    console.log("Trying API URL (YYYY-MM-DD):", url);
-    let response = await fetch(url, { cache: 'no-store' });
-
-    let records = [];
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("API error with YYYY-MM-DD:", response.status, response.statusText, errorText);
-
-      // Fallback to DD/MM/YYYY
-      const ddMMyyyyFormatter = new Intl.DateTimeFormat("en-IN", istOptions); // DD/MM/YYYY
-      const ddMMyyyyDate = ddMMyyyyFormatter.format(now); // e.g., "03/10/2025"
-      console.log("Falling back to DD/MM/YYYY:", ddMMyyyyDate);
-      url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(email)}&date=${ddMMyyyyDate}`;
-      response = await fetch(url, { cache: 'no-store' });
-      if (!response.ok) {
-        const errorText2 = await response.text();
-        throw new Error(`Failed to fetch attendance records: ${response.status} ${response.statusText}. Details: ${errorText2}`);
-      }
+  const fetchAttendanceStatus = async (email) => {
+    if (
+      !email ||
+      typeof email !== "string" ||
+      !userData.some(
+        (user) => user.email && user.email.toLowerCase() === email.toLowerCase()
+      )
+    ) {
+      console.log("Invalid email or user not found:", email);
+      setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+      return;
     }
 
-    records = await response.json();
-    console.log("API Response:", records);
+    try {
+      console.log("Fetching attendance status for email:", email);
 
-    const hasCheckedIn = records.some((record) => {
-      const entryType = record.EntryType?.trim().toLowerCase();
-      const site = record.site?.trim().toLowerCase();
-      return entryType === "in" && site === "Dimensions Office".toLowerCase();
-    });
+      const now = new Date();
+      const istOptions = {
+        timeZone: "Asia/Kolkata",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      };
+      const yyyyMMddFormatter = new Intl.DateTimeFormat("en-CA", istOptions);
+      const [year, month, day] = yyyyMMddFormatter.format(now).split("-");
+      const yyyyMMddDate = `${year}-${month}-${day}`;
+      console.log("Generated date (YYYY-MM-DD):", yyyyMMddDate);
 
-    const hasCheckedOut = records.some((record) => {
-      const entryType = record.EntryType?.trim().toLowerCase();
-      const site = record.site?.trim().toLowerCase();
-      return entryType === "out" && site === "Dimensions Office".toLowerCase();
-    });
+      let url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(
+        email
+      )}&date=${yyyyMMddDate}`;
+      console.log("Trying API URL (YYYY-MM-DD):", url);
+      let response = await fetch(url, { cache: "no-store" });
 
-    console.log("Attendance Status:", { hasCheckedIn, hasCheckedOut });
-    setAttendanceStatus({ hasCheckedIn, hasCheckedOut });
-  } catch (error) {
-    console.error("Error fetching attendance status:", error.message, error.stack);
-    setErrorMessage(`Error fetching attendance status: ${error.message.split("Details:")[1]?.trim() || error.message}`);
-    setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
-  }
-};
+      let records = [];
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "API error with YYYY-MM-DD:",
+          response.status,
+          response.statusText,
+          errorText
+        );
+
+        const ddMMyyyyFormatter = new Intl.DateTimeFormat("en-IN", istOptions);
+        const ddMMyyyyDate = ddMMyyyyFormatter.format(now);
+        console.log("Falling back to DD/MM/YYYY:", ddMMyyyyDate);
+        url = `https://dimension-attendance-leave-system.vercel.app/api/attendance?email=${encodeURIComponent(
+          email
+        )}&date=${ddMMyyyyDate}`;
+        response = await fetch(url, { cache: "no-store" });
+        if (!response.ok) {
+          const errorText2 = await response.text();
+          throw new Error(
+            `Failed to fetch attendance records: ${response.status} ${response.statusText}. Details: ${errorText2}`
+          );
+        }
+      }
+
+      records = await response.json();
+      console.log("Attendance API Response:", records);
+
+      const hasCheckedIn = records.some((record) => {
+        const entryType = record.EntryType?.trim().toLowerCase();
+        const site = record.site?.trim().toLowerCase();
+        return entryType === "in" && site === "Dimensions Office".toLowerCase();
+      });
+
+      const hasCheckedOut = records.some((record) => {
+        const entryType = record.EntryType?.trim().toLowerCase();
+        const site = record.site?.trim().toLowerCase();
+        return (
+          entryType === "out" && site === "Dimensions Office".toLowerCase()
+        );
+      });
+
+      console.log("Attendance Status:", { hasCheckedIn, hasCheckedOut });
+      setAttendanceStatus({ hasCheckedIn, hasCheckedOut });
+    } catch (error) {
+      console.error(
+        "Error fetching attendance status:",
+        error.message,
+        error.stack
+      );
+      setErrorMessage(
+        `Error fetching attendance status: ${
+          error.message.split("Details:")[1]?.trim() || error.message
+        }`
+      );
+      setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+    }
+  };
 
   // Fetch user data on mount
   useEffect(() => {
     const init = async () => {
       try {
         setIsDataLoading(true);
-        const res = await fetch("https://dimension-attendance-leave-system.vercel.app/api/DropdownUserData", {
-          cache: 'no-store',
-          priority: 'high'
-        });
+        const res = await fetch(
+          "https://dimension-attendance-leave-system.vercel.app/api/DropdownUserData",
+          {
+            cache: "no-store",
+            priority: "high",
+          }
+        );
         const apiData = await res.json();
-        console.log("API Response:", apiData);
+        console.log("Raw API Response:", JSON.stringify(apiData, null, 2));
 
         if (!apiData.success) {
           throw new Error(apiData.error || "Failed to fetch user data");
         }
 
-        const normalizedData = apiData.data.map((row) => ({
-          name: row["Names"] || "",
-          empCode: row["EMP Code"] || "",
-          mobile: row["Mobile No."] || "",
-          email: row["Email"] || "",
-          site: row["Sites"] || "",
-        }));
+        const normalizedData = apiData.data.map((row, index) => {
+          const site = row["Sites"] || "";
+          console.log(`Row ${index} Site:`, site);
+          return {
+            name: row["Names"] || "",
+            empCode: row["EMP Code"] || "",
+            mobile: row["Mobile No."] || "",
+            email: row["Email"] || "",
+            site,
+          };
+        });
 
         const usersWithEmail = normalizedData.filter(
-          (user) => user.email && typeof user.email === 'string'
+          (user) => user.email && typeof user.email === "string"
         );
         console.log("Users with email:", usersWithEmail);
 
         if (usersWithEmail.length === 0) {
-          setErrorMessage("No user data with emails available. Please contact support.");
+          setErrorMessage(
+            "No user data with emails available. Please contact support."
+          );
         }
 
         setUserData(usersWithEmail);
         setFilteredEmails(usersWithEmail);
 
-        const uniqueSites = [
-          ...new Set(normalizedData.map((user) => user.site).filter((site) => site && site !== "N/A"))
-        ];
-        console.log("Unique sites:", uniqueSites);
-        setFilteredSites(uniqueSites);
+        // Store all sites in a separate state
+        const sitesFromAPI = normalizedData
+          .map((user) => user.site)
+          .filter((site) => site !== null && site !== undefined && site !== "");
+        console.log("All sites from API:", sitesFromAPI);
+        console.log("Total sites count:", sitesFromAPI.length);
+        setAllSites(sitesFromAPI);
+        setFilteredSites(sitesFromAPI);
 
-        if (uniqueSites.length === 0) {
+        if (sitesFromAPI.length === 0) {
           console.warn("No valid Sites data received");
-          setErrorMessage("No site data available. Please contact the administrator.");
+          setErrorMessage(
+            "No site data available. Please contact the administrator."
+          );
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
-        setErrorMessage("Failed to load user data from API. Please try again later.");
+        setErrorMessage(
+          "Failed to load user data from API. Please try again later."
+        );
       } finally {
         setIsDataLoading(false);
       }
@@ -199,22 +1383,26 @@ const fetchAttendanceStatus = async (email) => {
   }, [formData.email]);
 
   const handleEmailSelect = (email) => {
-    const today = new Date().toISOString().split('T')[0];
-    const storedEmail = localStorage.getItem('userEmail');
+    const today = new Date().toISOString().split("T")[0];
+    const storedEmail = localStorage.getItem("userEmail");
 
     if (storedEmail && storedEmail.toLowerCase() !== email.toLowerCase()) {
-      setErrorMessage("Another email is already used for today's attendance. Please use the same email.");
+      setErrorMessage(
+        "Another email is already used for today's attendance. Please use the same email."
+      );
       return;
     }
 
-    const user = userData.find((u) => u.email && u.email.toLowerCase() === email.toLowerCase());
+    const user = userData.find(
+      (u) => u.email && u.email.toLowerCase() === email.toLowerCase()
+    );
     if (user) {
       setFormData((prev) => ({
         ...prev,
         email: user.email,
         name: user.name,
         empCode: user.empCode,
-        site: user.site,
+        site: "Dimensions Office",
         entryType: "",
         workShift: "",
         locationName: "",
@@ -223,10 +1411,12 @@ const fetchAttendanceStatus = async (email) => {
       setFilteredEmails(userData);
       setIsEmailDropdownOpen(false);
       setErrorMessage("");
-      localStorage.setItem('userEmail', user.email);
+      localStorage.setItem("userEmail", user.email);
       fetchAttendanceStatus(user.email);
     } else {
-      setErrorMessage("Selected email is not valid. Please choose from the dropdown.");
+      setErrorMessage(
+        "Selected email is not valid. Please choose from the dropdown."
+      );
     }
   };
 
@@ -238,7 +1428,10 @@ const fetchAttendanceStatus = async (email) => {
       setFilteredEmails(userData);
     } else {
       const filtered = userData.filter(
-        (user) => user.email && typeof user.email === 'string' && user.email.toLowerCase().includes(searchTerm)
+        (user) =>
+          user.email &&
+          typeof user.email === "string" &&
+          user.email.toLowerCase().includes(searchTerm)
       );
       setFilteredEmails(filtered);
     }
@@ -257,6 +1450,7 @@ const fetchAttendanceStatus = async (email) => {
   };
 
   const handleSiteSelect = (site) => {
+    console.log("Selected site:", site);
     setFormData((prev) => ({
       ...prev,
       site,
@@ -264,7 +1458,6 @@ const fetchAttendanceStatus = async (email) => {
       locationName: "",
       image: null,
     }));
-    setFilteredSites([]);
     setCapturedImage(null);
     setNearbyOffices([]);
     setIsSiteDropdownOpen(false);
@@ -277,15 +1470,20 @@ const fetchAttendanceStatus = async (email) => {
     const searchTerm = e.target.value.toLowerCase();
     setFormData((prev) => ({ ...prev, site: e.target.value }));
 
-    const uniqueSites = [...new Set(userData.map((user) => user.site).filter((site) => site && site !== "N/A"))];
-    const filtered = uniqueSites.filter((site) => site.toLowerCase().includes(searchTerm));
+    console.log("Search term:", searchTerm);
+    console.log("All sites for search:", allSites);
+    const filtered = allSites.filter(
+      (site) =>
+        site && typeof site === "string" && site.toLowerCase().includes(searchTerm)
+    );
+    console.log("Filtered sites for search:", filtered);
     setFilteredSites(filtered);
     setIsSiteDropdownOpen(true);
   };
 
   const handleSiteFocus = () => {
-    const uniqueSites = [...new Set(userData.map((user) => user.site).filter((site) => site && site !== "N/A"))];
-    setFilteredSites(uniqueSites);
+    console.log("All sites on focus:", allSites);
+    setFilteredSites(allSites);
     setIsSiteDropdownOpen(true);
   };
 
@@ -305,7 +1503,9 @@ const fetchAttendanceStatus = async (email) => {
     const Δφ = ((lat2 - lat1) * Math.PI) / 180;
     const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
@@ -320,11 +1520,14 @@ const fetchAttendanceStatus = async (email) => {
           console.log("Current location:", userLat, userLng);
 
           const filteredOffices = offices.filter(
-            (office) => calculateDistance(userLat, userLng, office.lat, office.lng) <= 300
+            (office) =>
+              calculateDistance(userLat, userLng, office.lat, office.lng) <= 300
           );
           setNearbyOffices(filteredOffices);
 
-          const nearbyOfficeNames = filteredOffices.map((office) => office.name).join(", ");
+          const nearbyOfficeNames = filteredOffices
+            .map((office) => office.name)
+            .join(", ");
           setFormData((prev) => ({
             ...prev,
             locationName: nearbyOfficeNames || "No offices within 300m",
@@ -333,7 +1536,9 @@ const fetchAttendanceStatus = async (email) => {
         },
         (error) => {
           console.error("Error fetching location:", error.message);
-          setErrorMessage("Unable to fetch your location. Please enable geolocation.");
+          setErrorMessage(
+            "Unable to fetch your location. Please enable geolocation."
+          );
           setFormData((prev) => ({
             ...prev,
             locationName: "Location access denied",
@@ -372,7 +1577,13 @@ const fetchAttendanceStatus = async (email) => {
   const takePhoto = () => {
     if (canvasRef.current && videoRef.current) {
       const context = canvasRef.current.getContext("2d");
-      context.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+      context.drawImage(
+        videoRef.current,
+        0,
+        0,
+        canvasRef.current.width,
+        canvasRef.current.height
+      );
       canvasRef.current.toBlob((blob) => {
         setFormData((prev) => ({ ...prev, image: blob }));
         setCapturedImage(URL.createObjectURL(blob));
@@ -409,39 +1620,55 @@ const fetchAttendanceStatus = async (email) => {
       entryType: "Entry Type",
       workShift: "Work Shift",
       locationName: "Location Name",
-      image: "Image",
     };
 
-    const missingFields = Object.keys(requiredFields).filter((key) => !formData[key] || formData[key] === "");
+    const missingFields = Object.keys(requiredFields).filter(
+      (key) => !formData[key] || formData[key] === ""
+    );
     if (missingFields.length > 0) {
-      const missingFieldNames = missingFields.map((key) => requiredFields[key]).join(", ");
-      setErrorMessage(`Please fill in all required fields: ${missingFieldNames}`);
+      const missingFieldNames = missingFields
+        .map((key) => requiredFields[key])
+        .join(", ");
+      setErrorMessage(
+        `Please fill in all required fields: ${missingFieldNames}`
+      );
       setIsSubmitting(false);
       return;
     }
 
-    const user = userData.find((user) => user.email && user.email.toLowerCase() === formData.email.toLowerCase());
+    const user = userData.find(
+      (user) =>
+        user.email && user.email.toLowerCase() === formData.email.toLowerCase()
+    );
     if (!user) {
-      setErrorMessage("Invalid email. Please select a valid email from the suggestions.");
+      setErrorMessage(
+        "Invalid email. Please select a valid email from the suggestions."
+      );
       setIsSubmitting(false);
       return;
     }
 
     if (user.name !== formData.name || user.empCode !== formData.empCode) {
-      setErrorMessage("Name or Employee Code does not match the selected email.");
+      setErrorMessage(
+        "Name or Employee Code does not match the selected email."
+      );
       setIsSubmitting(false);
       return;
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const storedEmail = localStorage.getItem('userEmail');
-    if (storedEmail && storedEmail.toLowerCase() !== formData.email.toLowerCase()) {
-      setErrorMessage("Another email is already used for today's attendance. Please use the same email.");
+    const today = new Date().toISOString().split("T")[0];
+    const storedEmail = localStorage.getItem("userEmail");
+    if (
+      storedEmail &&
+      storedEmail.toLowerCase() !== formData.email.toLowerCase()
+    ) {
+      setErrorMessage(
+        "Another email is already used for today's attendance. Please use the same email."
+      );
       setIsSubmitting(false);
       return;
     }
 
-    // Refetch status before submit to ensure latest from API
     await fetchAttendanceStatus(formData.email);
 
     const { hasCheckedIn, hasCheckedOut } = attendanceStatus;
@@ -465,7 +1692,6 @@ const fetchAttendanceStatus = async (email) => {
     }
 
     try {
-      const imageBase64 = await toBase64(formData.image);
       const payload = {
         email: formData.email,
         name: formData.name,
@@ -474,28 +1700,38 @@ const fetchAttendanceStatus = async (email) => {
         entryType: formData.entryType,
         workShift: formData.workShift,
         locationName: formData.locationName,
-        image: imageBase64,
+        image: formData.image ? await toBase64(formData.image) : "N/A",
       };
 
-      const response = await fetch("https://dimension-attendance-leave-system.vercel.app/api/attendance-Form", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("Submitting payload:", payload);
+
+      const response = await fetch(
+        "https://dimension-attendance-leave-system.vercel.app/api/attendance-Form",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const responseData = await response.json();
+      console.log("API Response:", responseData);
+
       if (response.ok && responseData.result === "success") {
-        setSuccessMessage(`Attendance ${formData.entryType === "In" ? "Check In" : "Check Out"} submitted successfully!`);
+        setSuccessMessage(
+          `Attendance ${
+            formData.entryType === "In" ? "Check In" : "Check Out"
+          } submitted successfully!`
+        );
         setShowSuccess(true);
 
-        localStorage.setItem('userEmail', formData.email);
+        localStorage.setItem("userEmail", formData.email);
         await fetchAttendanceStatus(formData.email);
 
         setTimeout(() => setShowSuccess(false), 3000);
 
-        // Reset form to allow further submissions
         setFormData({
           email: "",
           name: "",
@@ -509,14 +1745,16 @@ const fetchAttendanceStatus = async (email) => {
         setNearbyOffices([]);
         setCapturedImage(null);
         setFilteredEmails(userData);
-        setFilteredSites([]);
+        setFilteredSites(allSites);
         setIsEmailDropdownOpen(false);
         setIsSiteDropdownOpen(false);
         setErrorMessage("");
         setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
       } else {
         setErrorMessage(
-          `Error submitting attendance: ${responseData.error || "Please try again."}${responseData.details ? ` (${responseData.details})` : ""}`
+          `Error submitting attendance: ${
+            responseData.error || "Please try again."
+          }${responseData.details ? ` (${responseData.details})` : ""}`
         );
       }
     } catch (error) {
@@ -535,7 +1773,6 @@ const fetchAttendanceStatus = async (email) => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-800 py-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-2xl mx-auto">
-        {/* Success Notification */}
         {showSuccess && (
           <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-fade-in-down">
             <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl border border-green-400 flex items-center space-x-3 max-w-sm">
@@ -548,7 +1785,6 @@ const fetchAttendanceStatus = async (email) => {
           </div>
         )}
 
-        {/* Data Loading Overlay */}
         {isDataLoading && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
             <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 max-w-sm mx-4">
@@ -556,17 +1792,23 @@ const fetchAttendanceStatus = async (email) => {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
                   <Loader2 className="w-8 h-8 text-white animate-spin" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading User Data</h3>
-                <p className="text-gray-600 text-sm">Please wait while we fetch user information...</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Loading User Data
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Please wait while we fetch user information...
+                </p>
                 <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse"
+                    style={{ width: "70%" }}
+                  ></div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Submitting Overlay */}
         {isSubmitting && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
             <div className="bg-white rounded-2xl p-8 shadow-2xl border border-gray-100 max-w-sm mx-4">
@@ -574,24 +1816,33 @@ const fetchAttendanceStatus = async (email) => {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full mb-4">
                   <Loader2 className="w-8 h-8 text-white animate-spin" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Submitting Attendance</h3>
-                <p className="text-gray-600 text-sm">Please wait while we process your request...</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Submitting Attendance
+                </h3>
+                <p className="text-gray-600 text-sm">
+                  Please wait while we process your request...
+                </p>
                 <div className="mt-4 w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse" style={{ width: '70%' }}></div>
+                  <div
+                    className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full animate-pulse"
+                    style={{ width: "70%" }}
+                  ></div>
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* Header */}
         <div className="text-center mb-8">
-          <img src="dimensions-logo.jpg" className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg" alt="dimensions Logo" />
+          <img
+            src="dimensions-logo.jpg"
+            className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-2xl mb-4 shadow-lg"
+            alt="Dimensions Logo"
+          />
           <h1 className="text-3xl font-bold text-white">Attendance Form</h1>
           <p className="text-white mt-2">Mark your attendance with ease</p>
         </div>
 
-        {/* Main Form */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
           <div className="p-8">
             {errorMessage && (
@@ -611,12 +1862,21 @@ const fetchAttendanceStatus = async (email) => {
               </div>
             )}
 
+            {filteredSites.length === 0 && !formData.site && (
+              <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                <p className="text-yellow-700 text-sm">
+                  No valid site suggestions available. Please contact support.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-6">
-              {/* Email Field */}
               <div className="space-y-2">
                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                   <Mail className="w-4 h-4 text-indigo-500" />
-                  <span>Email Address <span className="text-red-500">*</span></span>
+                  <span>
+                    Email Address <span className="text-red-500">*</span>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -634,11 +1894,20 @@ const fetchAttendanceStatus = async (email) => {
                     <button
                       type="button"
                       onClick={() => {
-                        setFormData((prev) => ({ ...prev, email: "", name: "", empCode: "", site: "" }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          email: "",
+                          name: "",
+                          empCode: "",
+                          site: "",
+                        }));
                         setFilteredEmails(userData);
                         setIsEmailDropdownOpen(false);
                         setErrorMessage("");
-                        setAttendanceStatus({ hasCheckedIn: false, hasCheckedOut: false });
+                        setAttendanceStatus({
+                          hasCheckedIn: false,
+                          hasCheckedOut: false,
+                        });
                       }}
                       className="absolute right-3 top-3.5 text-gray-400 hover:text-gray-600"
                     >
@@ -646,16 +1915,19 @@ const fetchAttendanceStatus = async (email) => {
                     </button>
                   )}
                   {isEmailDropdownOpen && filteredEmails.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto">
                       {filteredEmails.map((user) => (
                         <div
                           key={user.email}
                           onMouseDown={() => handleEmailSelect(user.email)}
                           className="px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0"
                         >
-                          <div className="font-medium text-gray-900">{user.email}</div>
+                          <div className="font-medium text-gray-900">
+                            {user.email}
+                          </div>
                           <div className="text-sm text-gray-500">
-                            {user.name || '(No name)'} - {user.empCode || '(No emp code)'}
+                            {user.name || "(No name)"} -{" "}
+                            {user.empCode || "(No emp code)"}
                           </div>
                         </div>
                       ))}
@@ -664,12 +1936,13 @@ const fetchAttendanceStatus = async (email) => {
                 </div>
               </div>
 
-              {/* Name and Emp Code Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                     <User className="w-4 h-4 text-indigo-500" />
-                    <span>Name <span className="text-red-500">*</span></span>
+                    <span>
+                      Name <span className="text-red-500">*</span>
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -681,7 +1954,9 @@ const fetchAttendanceStatus = async (email) => {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                     <User className="w-4 h-4 text-indigo-500" />
-                    <span>Emp Code <span className="text-red-500">*</span></span>
+                    <span>
+                      Emp Code <span className="text-red-500">*</span>
+                    </span>
                   </label>
                   <input
                     type="text"
@@ -692,11 +1967,12 @@ const fetchAttendanceStatus = async (email) => {
                 </div>
               </div>
 
-              {/* Site Field */}
               <div className="space-y-2">
                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                   <Building className="w-4 h-4 text-indigo-500" />
-                  <span>Site <span className="text-red-500">*</span></span>
+                  <span>
+                    Site <span className="text-red-500">*</span>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -710,15 +1986,15 @@ const fetchAttendanceStatus = async (email) => {
                     autoComplete="off"
                   />
                   <Building className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
-                  {formData.site && isSiteDropdownOpen && filteredSites.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                      {filteredSites.map((site) => (
+                  {isSiteDropdownOpen && filteredSites.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-[600px] overflow-y-auto">
+                      {filteredSites.map((site, index) => (
                         <div
-                          key={site}
+                          key={`${site}-${index}`}
                           onMouseDown={() => handleSiteSelect(site)}
                           className="px-4 py-3 cursor-pointer hover:bg-indigo-50 transition-colors border-b border-gray-100 last:border-b-0"
                         >
-                          {site}
+                          {site || "(No site name)"}
                         </div>
                       ))}
                     </div>
@@ -726,17 +2002,22 @@ const fetchAttendanceStatus = async (email) => {
                 </div>
               </div>
 
-              {/* Entry Type and Work Shift Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                     <CheckCircle className="w-4 h-4 text-indigo-500" />
-                    <span>Entry Type <span className="text-red-500">*</span></span>
+                    <span>
+                      Entry Type <span className="text-red-500">*</span>
+                    </span>
                   </label>
-                  {isSpecificRCC && attendanceStatus.hasCheckedIn && attendanceStatus.hasCheckedOut ? (
+                  {isSpecificRCC &&
+                  attendanceStatus.hasCheckedIn &&
+                  attendanceStatus.hasCheckedOut ? (
                     <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center space-x-3">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <p className="text-green-700 text-sm">You have completed Check In and Check Out for today.</p>
+                      <p className="text-green-700 text-sm">
+                        You have completed Check In and Check Out for today.
+                      </p>
                     </div>
                   ) : (
                     <select
@@ -749,9 +2030,18 @@ const fetchAttendanceStatus = async (email) => {
                       {(() => {
                         let entryOptions = allEntryTypes;
                         if (isSpecificRCC) {
-                          entryOptions = allEntryTypes.filter(type => {
-                            if (type.value === "In" && !attendanceStatus.hasCheckedIn) return true;
-                            if (type.value === "Out" && attendanceStatus.hasCheckedIn && !attendanceStatus.hasCheckedOut) return true;
+                          entryOptions = allEntryTypes.filter((type) => {
+                            if (
+                              type.value === "In" &&
+                              !attendanceStatus.hasCheckedIn
+                            )
+                              return true;
+                            if (
+                              type.value === "Out" &&
+                              attendanceStatus.hasCheckedIn &&
+                              !attendanceStatus.hasCheckedOut
+                            )
+                              return true;
                             return false;
                           });
                         }
@@ -767,7 +2057,9 @@ const fetchAttendanceStatus = async (email) => {
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                     <Clock className="w-4 h-4 text-indigo-500" />
-                    <span>Work Shift <span className="text-red-500">*</span></span>
+                    <span>
+                      Work Shift <span className="text-red-500">*</span>
+                    </span>
                   </label>
                   <select
                     name="workShift"
@@ -776,22 +2068,35 @@ const fetchAttendanceStatus = async (email) => {
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors appearance-none bg-white"
                   >
                     <option value="">-- Select Work Shift --</option>
-                    <option value="09:00 AM - 06:00 PM">09:00 AM - 07:00 PM</option>
-                    <option value="09:30 AM - 06:00 PM">09:30 AM - 06:00 PM</option>
-                    <option value="02:00 PM - 06:00 PM">10:00 AM - 05:00 PM</option>
-                    <option value="09:00 PM - 01:00 PM">10:00 AM - 06:00 PM</option>
-                    <option value="08:00 AM - 04:00 PM">10:00 AM - 02:00 PM</option>
-                    <option value="08:00 AM - 04:00 PM">02:00 AM - 06:00 PM</option>
+                    <option value="09:00 AM - 06:00 PM">
+                      09:00 AM - 07:00 PM
+                    </option>
+                    <option value="09:30 AM - 06:00 PM">
+                      09:30 AM - 06:00 PM
+                    </option>
+                    <option value="02:00 PM - 06:00 PM">
+                      10:00 AM - 05:00 PM
+                    </option>
+                    <option value="09:00 PM - 01:00 PM">
+                      10:00 AM - 06:00 PM
+                    </option>
+                    <option value="08:00 AM - 04:00 PM">
+                      10:00 AM - 02:00 PM
+                    </option>
+                    <option value="08:00 AM - 04:00 PM">
+                      02:00 AM - 06:00 PM
+                    </option>
                     <option value="Sunday">Sunday</option>
                   </select>
                 </div>
               </div>
 
-              {/* Location */}
               <div className="space-y-3">
                 <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
                   <MapPin className="w-4 h-4 text-indigo-500" />
-                  <span>Location Name <span className="text-red-500">*</span></span>
+                  <span>
+                    Location Name <span className="text-red-500">*</span>
+                  </span>
                 </label>
                 <div className="relative">
                   <input
@@ -823,73 +2128,92 @@ const fetchAttendanceStatus = async (email) => {
                 </button>
               </div>
 
-              {/* Camera Section */}
               <div className="space-y-3">
-  <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
-    <Camera className="w-4 h-4 text-indigo-500" />
-    <span>Capture Image</span> {/* Removed <span className="text-red-500">*</span> */}
-  </label>
-  {!isCameraOpen && !capturedImage && (
-    <button
-      type="button"
-      onClick={startCamera}
-      className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2"
-    >
-      <Camera className="w-5 h-5" />
-      <span>Open Camera</span>
-    </button>
-  )}
-  {isCameraOpen && (
-    <div className="space-y-3">
-      <div className="relative bg-gray-900 rounded-xl overflow-hidden">
-        <video ref={videoRef} className="w-full h-64 object-cover" playsInline />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={takePhoto}
-          className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center space-x-2"
-        >
-          <Camera className="w-4 h-4" />
-          <span>Take Photo</span>
-        </button>
-        <button
-          type="button"
-          onClick={stopCamera}
-          className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold rounded-xl shadow-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200 flex items-center justify-center space-x-2"
-        >
-          <XCircle className="w-4 h-4" />
-          <span>Cancel</span>
-        </button>
-      </div>
-    </div>
-  )}
-  {capturedImage && (
-    <div className="space-y-3">
-      <div className="relative">
-        <img
-          src={capturedImage}
-          alt="Captured"
-          className="w-full h-64 object-cover rounded-xl border-2 border-green-200"
-        />
-        <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
-          <CheckCircle className="w-3 h-3" />
-          <span>Image Captured</span>
-        </div>
-      </div>
-      <button
-        type="button"
-        onClick={startCamera}
-        className="w-full px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
-      >
-        Retake Photo
-      </button>
-    </div>
-  )}
-  <canvas ref={canvasRef} width="640" height="480" className="hidden" />
-</div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-gray-700">
+                  <Camera className="w-4 h-4 text-indigo-500" />
+                  <span>Capture Image (Optional)</span>
+                </label>
+                {!isCameraOpen && !capturedImage && (
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 flex items-center justify-center space-x-2"
+                  >
+                    <Camera className="w-5 h-5" />
+                    <span>Open Camera</span>
+                  </button>
+                )}
+                {isCameraOpen && (
+                  <div className="space-y-3">
+                    <div className="relative bg-gray-900 rounded-xl overflow-hidden">
+                      <video
+                        ref={videoRef}
+                        className="w-full h-64 object-cover"
+                        playsInline
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={takePhoto}
+                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-xl shadow-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 flex items-center justify-center space-x-2"
+                      >
+                        <Camera className="w-4 h-4" />
+                        <span>Take Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={stopCamera}
+                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white font-semibold rounded-xl shadow-lg hover:from-red-600 hover:to-rose-700 transition-all duration-200 flex items-center justify-center space-x-2"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        <span>Cancel</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {capturedImage && (
+                  <div className="space-y-3">
+                    <div className="relative">
+                      <img
+                        src={capturedImage}
+                        alt="Captured"
+                        className="w-full h-64 object-cover rounded-xl border-2 border-green-200"
+                      />
+                      <div className="absolute top-3 right-3 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1">
+                        <CheckCircle className="w-3 h-3" />
+                        <span>Image Captured</span>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={startCamera}
+                        className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
+                      >
+                        Retake Photo
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData((prev) => ({ ...prev, image: null }));
+                          setCapturedImage(null);
+                        }}
+                        className="px-6 py-2 bg-red-100 text-red-700 font-medium rounded-xl hover:bg-red-200 transition-colors"
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  </div>
+                )}
+                <canvas
+                  ref={canvasRef}
+                  width="640"
+                  height="480"
+                  className="hidden"
+                />
+              </div>
 
-              {/* Submit Button */}
               <div className="pt-4">
                 <button
                   type="button"
@@ -918,7 +2242,6 @@ const fetchAttendanceStatus = async (email) => {
           </div>
         </div>
 
-        {/* Footer */}
         <div className="text-center mt-8">
           <p className="text-gray-500 text-sm">
             © 2025 Attendance Portal. Secure & Reliable.
